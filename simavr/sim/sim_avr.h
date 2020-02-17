@@ -415,6 +415,12 @@ avr_loadcode(
  * IO modules use that to set values to registers, and the AVR core decoder uses
  * that to register "public" read by instructions.
  */
+void 
+avr_set_r(
+		avr_t * avr, 
+		uint16_t r, 
+		uint8_t v);
+
 void
 avr_core_watch_write(
 		avr_t *avr,

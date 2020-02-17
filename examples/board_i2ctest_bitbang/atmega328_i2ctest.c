@@ -2,6 +2,7 @@
 	atmega48_i2ctest.c
 
 	Copyright 2008-2011 Michel Pollet <buserror@gmail.com>
+    Copyright 2020      Luis Claudio Gamboa Lopes <lcgamboa@yahoo.com>
 
  	This file is part of simavr.
 
@@ -22,10 +23,11 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+#include <util/delay.h>
 
 // for linker, emulator, and programmer's sake
 #include "avr_mcu_section.h"
-AVR_MCU(F_CPU, "atmega1280");
+AVR_MCU(F_CPU, "atmega328");
 
 #include "../shared/avr_twi_master.h"
 #include "../shared/twimaster.h"
@@ -33,6 +35,8 @@ AVR_MCU(F_CPU, "atmega1280");
 #include <stdio.h>
 
 #define EEPROM_ADDR	0xA0
+
+#define RTC_ADDR	0xD0
 
 static int uart_putchar(char c, FILE *stream) {
   if (c == '\n')
@@ -62,7 +66,6 @@ test_twi_with_atmel_driver(void)
 		while (TWI_Transceiver_Busy())
 			sleep_mode();
 	}
-   
 	{
 		uint8_t msg[8] = {
 				EEPROM_ADDR, // TWI address,
@@ -81,7 +84,42 @@ test_twi_with_atmel_driver(void)
 
 		while (TWI_Transceiver_Busy())
 			sleep_mode();
+        for(int i=1;i < 9; i++)
+         {
+           printf("%02X\n",msg[i]);
+         }
+     }
+}
+
+void
+test_twi_with_atmel_driver_ds(void)
+{
+	TWI_Master_Initialise();
+
+	{
+		uint8_t msg[8] = {
+				RTC_ADDR, // TWI address,
+			    0x00, // eeprom address, in little endian
+		};
+		TWI_Start_Transceiver_With_Data(msg, 2, 0); // dont send stop!
+
+		while (TWI_Transceiver_Busy())
+			sleep_mode();
 	}
+	{
+		uint8_t msg[9] = {
+				RTC_ADDR + 1, // TWI address,
+		};
+		TWI_Start_Transceiver_With_Data(msg, 4, 1); // write 1 byte, read 8, send stop
+
+		while (TWI_Transceiver_Busy())
+			sleep_mode();
+        
+         for(int i=1;i < 4; i++)
+         {
+           printf("%02X\n",msg[i]);
+         }
+     }
 }
 
 /*
@@ -108,7 +146,6 @@ test_twi_with_pf_driver(void)
 	i2c_write(0xd0);
 	i2c_write(0x0d);
 	i2c_stop();
-
 	i2c_start(EEPROM_ADDR + I2C_WRITE);
 	// set address
 	i2c_write(0xa8);
@@ -117,7 +154,25 @@ test_twi_with_pf_driver(void)
 	// Read back data
 	i2c_start (EEPROM_ADDR + I2C_READ);
 	for (uint8_t i = 0; i < 8; ++i) {
-		i2c_readNak();
+		printf("%02X\n",i2c_readNak());
+	};
+	i2c_stop();
+}
+
+void
+test_twi_with_pf_driver_ds(void)
+{
+	/*
+	 * This init followed by a start condition is enough to overwrite all TWI
+	 * related bits set by TWI_Master_Initialise () in the Atmel driver.
+	 */
+	i2c_init();
+
+	i2c_start(RTC_ADDR + I2C_WRITE);
+	i2c_write(0x00);
+	i2c_start (RTC_ADDR + I2C_READ);
+	for (uint8_t i = 0; i < 3; ++i) {
+        printf("%02X\n",i2c_readNak());
 	};
 	i2c_stop();
 }
@@ -127,6 +182,8 @@ int main()
 	stdout = &mystdout;
 
 	sei();
+    
+    TWSR=0;//need for atmel driver check status
     printf("----------------test ad-----------------\n");
 	test_twi_with_atmel_driver();
 
@@ -137,6 +194,16 @@ int main()
     printf("----------------test pf-----------------\n");
 	test_twi_with_pf_driver ();
 
+    
+    TWSR=0;//need for atmel driver check status
+    printf("----------------test ds ad-----------------\n");
+	test_twi_with_atmel_driver_ds ();
+    
+    printf("----------------test ds pf-----------------\n");
+	test_twi_with_pf_driver_ds ();    
+
+
+    
 	cli();
 	sleep_mode();
 }

@@ -205,6 +205,14 @@ static inline void _avr_set_r(avr_t * avr, uint16_t r, uint8_t v)
 		avr->data[r] = v;
 }
 
+void 
+avr_set_r(
+		avr_t * avr, 
+		uint16_t r, 
+		uint8_t v){
+            _avr_set_r(avr, r, v);
+}
+
 static inline void
 _avr_set_r16le(
 	avr_t * avr,

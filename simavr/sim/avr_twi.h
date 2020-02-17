@@ -27,8 +27,7 @@ extern "C" {
 #endif
 
 #include "sim_avr.h"
-
-//#include "sim_twi.h"
+#include "avr_bitbang.h"
 
 enum {
 	TWI_IRQ_INPUT = 0,
@@ -46,6 +45,7 @@ enum {
 	TWI_COND_READ = (1 << 5),
 	// internal state, do not use in irq messages
 	TWI_COND_SLAVE	= (1 << 6),
+	TWI_COND_ACK_ADDR = (1 << 7),
 };
 
 typedef struct avr_twi_msg_t {
@@ -77,6 +77,8 @@ typedef struct avr_twi_t {
 	avr_io_addr_t	r_twar;			// address register (slave)
 	avr_io_addr_t	r_twamr;		// address mask register
 	avr_io_addr_t	r_twdr;			// data register
+        
+        avr_io_addr_t	r_ddrx;			// pin direction register
 	
 	avr_regbit_t twen;		// twi enable bit
 	avr_regbit_t twea;		// enable acknowledge bit
@@ -92,6 +94,14 @@ typedef struct avr_twi_t {
 	uint8_t state;
 	uint8_t peer_addr;
 	uint8_t next_twstate;
+
+	avr_iopin_t	p_sda;		// data in/out pin
+	avr_iopin_t	p_scl;		// clk  in/out pin
+	avr_bitbang_t	bit_bang;
+        avr_bitbang_t	bit_bang_ack;
+
+	uint8_t		input_data_register;
+	//uint8_t		output_data_register;
 } avr_twi_t;
 
 void
@@ -108,6 +118,43 @@ avr_twi_irq_msg(
 		uint8_t msg,
 		uint8_t addr,
 		uint8_t data);
+
+
+
+#define AVR_TWI_DECLARE(_prr, _prtwi, _pin_port, _p_scl, _p_sda) \
+	.twi = { \
+		.disabled = AVR_IO_REGBIT(_prr, _prtwi), \
+	\
+                .r_twcr = TWCR, \
+		.r_twsr = TWSR, \
+		.r_twbr = TWBR, \
+		.r_twdr = TWDR, \
+		.r_twar = TWAR, \
+		.r_twamr = TWAMR, \
+                .r_ddrx = DDRB, \
+	\
+		.twen = AVR_IO_REGBIT(TWCR, TWEN), \
+		.twea = AVR_IO_REGBIT(TWCR, TWEA), \
+		.twsta = AVR_IO_REGBIT(TWCR, TWSTA), \
+		.twsto = AVR_IO_REGBIT(TWCR, TWSTO), \
+		.twwc = AVR_IO_REGBIT(TWCR, TWWC), \
+	\
+		.bit_bang.p_clk = AVR_IOPIN(_pin_port, _p_scl), \
+		.bit_bang.p_in = AVR_IOPIN(_pin_port, _p_sda), \
+		.bit_bang.p_out = AVR_IOPIN(_pin_port, _p_sda), \
+		.p_scl = AVR_IOPIN(_pin_port, _p_scl), \
+		.p_sda = AVR_IOPIN(_pin_port, _p_sda), \
+		.twsr = AVR_IO_REGBITS(TWSR, TWS3, 0x1f),\
+		.twps = AVR_IO_REGBITS(TWSR, TWPS0, 0x3),\
+	\
+		.twi = {\
+			.enable = AVR_IO_REGBIT(TWCR, TWIE),\
+			.raised = AVR_IO_REGBIT(TWCR, TWINT),\
+			.raise_sticky = 0,\
+			.vector = TWI_vect,\
+		},\
+	}
+
 
 #ifdef __cplusplus
 };

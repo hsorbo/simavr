@@ -29,17 +29,19 @@
 #include "sim_elf.h"
 #include "sim_gdb.h"
 #include "sim_vcd_file.h"
-#include "i2c_eeprom.h"
+#include "mi2c_24CXXX.h"
+#include "rtc_ds1307.h"
 
 avr_t * avr = NULL;
 avr_vcd_t vcd_file;
 
-i2c_eeprom_t ee;
+mi2c_t ee;
+rtc2_t ds;
 
 int main(int argc, char *argv[])
 {
 	elf_firmware_t f;
-	const char * fname =  "atmega1280_i2ctest.axf";
+	const char * fname =  "atmega328_i2ctest.axf";
 
 	printf("Firmware pathname is %s\n", fname);
 	elf_read_firmware(fname, &f);
@@ -56,11 +58,15 @@ int main(int argc, char *argv[])
 	avr_load_firmware(avr, &f);
 
 	// initialize our 'peripheral', setting the mask to allow read and write
-	i2c_eeprom_init(avr, &ee, 0xa0, 0x01, NULL, 1024);
-
-	i2c_eeprom_attach(avr, &ee, AVR_IOCTL_TWI_GETIRQ(0));
-	ee.verbose = 1;
-
+	//i2c_eeprom_init(avr, &ee, 0xa0, 0x01, NULL, 1024);
+    mi2c_init(&ee,4);
+    mi2c_rst(&ee);
+	//i2c_eeprom_attach(avr, &ee, AVR_IOCTL_TWI_GETIRQ(0));
+	//ee.verbose = 1;
+    
+    rtc2_init(&ds);
+    rtc2_rst(&ds);
+    
 	// even if not setup at startup, activate gdb if crashing
 	avr->gdb_port = 1234;
 	if (0) {
@@ -73,15 +79,35 @@ int main(int argc, char *argv[])
 	 */
  	avr_vcd_init(avr, "gtkwave_output.vcd", &vcd_file, 1 /* usec */);
 	avr_vcd_add_signal(&vcd_file, avr_io_getirq(avr, AVR_IOCTL_TWI_GETIRQ(0), TWI_IRQ_STATUS), 8 /* bits */ ,"TWSR" );
-        avr_vcd_add_signal(&vcd_file, avr_io_getirq(avr, AVR_IOCTL_IOPORT_GETIRQ('D'), 0), 1 /* bits */, "SCL");
-        avr_vcd_add_signal(&vcd_file, avr_io_getirq(avr, AVR_IOCTL_IOPORT_GETIRQ('D'), 1), 1 /* bits */, "SDA");
-        avr_vcd_add_signal(&vcd_file, avr_io_getirq(avr, AVR_IOCTL_IOPORT_GETIRQ ('D'), IOPORT_IRQ_DIRECTION_ALL),8,"DDRD");
-        avr_vcd_start(&vcd_file);
+    avr_vcd_add_signal(&vcd_file, avr_io_getirq(avr, AVR_IOCTL_IOPORT_GETIRQ('C'), 5), 1 /* bits */, "SCL");
+    avr_vcd_add_signal(&vcd_file, avr_io_getirq(avr, AVR_IOCTL_IOPORT_GETIRQ('C'), 4), 1 /* bits */, "SDA");
+    avr_vcd_add_signal(&vcd_file, avr_io_getirq(avr, AVR_IOCTL_IOPORT_GETIRQ('C'), IOPORT_IRQ_PIN_ALL), 8 /* bits */, "PIN_ALL");
+    avr_vcd_add_signal(&vcd_file, avr_io_getirq(avr, AVR_IOCTL_IOPORT_GETIRQ('C'), IOPORT_IRQ_REG_PORT ), 8 /* bits */, "REG_PORT");
+    avr_vcd_add_signal(&vcd_file, avr_io_getirq(avr, AVR_IOCTL_IOPORT_GETIRQ('C'), IOPORT_IRQ_REG_PIN ), 8 /* bits */, "REG_PIN");
+    avr_vcd_add_signal(&vcd_file, avr_io_getirq(avr, AVR_IOCTL_IOPORT_GETIRQ ('C'), IOPORT_IRQ_DIRECTION_ALL),8,"DDRC");
+    avr_vcd_start(&vcd_file);
 	
 	printf( "\nDemo launching:\n");
 
 	int state = cpu_Running;
-	while ((state != cpu_Done) && (state != cpu_Crashed))
-		state = avr_run(avr);
+    unsigned char sdav;
+    unsigned char sclv;
+    unsigned char temp;
+	while ((state != cpu_Done) && (state != cpu_Crashed)){
+		state = avr_run(avr);    
+        temp=avr_core_watch_read(avr,0x26); //0x26 PINC 0x27 DDRC 0x28 PORTC
+        sdav=(temp & 0x10) > 0;
+        sclv=(temp & 0x20) > 0;    
+
+        int retval= 0;
+        retval|=mi2c_io(&ee, sclv, sdav);
+        retval|=rtc2_io(&ds, sclv, sdav);
+        if((avr_core_watch_read(avr,0x27) & 0x30) == 0x20 )
+         {
+           avr_raise_irq (avr_io_getirq (avr, AVR_IOCTL_IOPORT_GETIRQ ('C'), 4), retval);
+         }
+    }
     avr_vcd_stop(&vcd_file);
+    mi2c_end(&ee);
+    rtc2_end(&ds);
 }

@@ -235,7 +235,6 @@ void avr_bitbang_start(avr_bitbang_t * p)
  */
 void avr_bitbang_stop(avr_bitbang_t * p)
 {
-
 	p->enabled = 0;
 	avr_cycle_timer_cancel(p->avr, avr_bitbang_clk_timer, p);
 	avr_irq_unregister_notify( avr_io_getirq(p->avr, AVR_IOCTL_IOPORT_GETIRQ( p->p_clk.port ), p->p_clk.pin), avr_bitbang_clk_hook, p);

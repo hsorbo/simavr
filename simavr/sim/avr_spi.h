@@ -82,9 +82,9 @@ void avr_spi_init(avr_t * avr, avr_spi_t * port);
 		.cpol = AVR_IO_REGBIT(SPCR ## _name, CPOL ## _name), \
 		.cpha = AVR_IO_REGBIT(SPCR ## _name, CPHA ## _name), \
 	\
-		.bit_bang.p_clk = AVR_IOPIN('B', _p_sck), \
-		.p_miso = AVR_IOPIN('B', _p_miso), \
-		.p_mosi = AVR_IOPIN('B', _p_mosi), \
+		.bit_bang.p_clk = AVR_IOPIN(_ss_pin_port, _p_sck), \
+		.p_miso = AVR_IOPIN(_ss_pin_port, _p_miso), \
+		.p_mosi = AVR_IOPIN(_ss_pin_port, _p_mosi), \
 		.p_ss = AVR_IOPIN(_ss_pin_port, _p_ss), \
 	\
 		.spr = { AVR_IO_REGBIT(SPCR ## _name, SPR0 ## _name), \
@@ -111,9 +111,9 @@ void avr_spi_init(avr_t * avr, avr_spi_t * port);
 		.cpol = AVR_IO_REGBIT(SPCR, CPOL), \
 		.cpha = AVR_IO_REGBIT(SPCR, CPHA), \
 	\
-		.bit_bang.p_clk = AVR_IOPIN('B', _p_sck), \
-		.p_miso = AVR_IOPIN('B', _p_miso), \
-		.p_mosi = AVR_IOPIN('B', _p_mosi), \
+		.bit_bang.p_clk = AVR_IOPIN(_ss_pin_port, _p_sck), \
+		.p_miso = AVR_IOPIN(_ss_pin_port, _p_miso), \
+		.p_mosi = AVR_IOPIN(_ss_pin_port, _p_mosi), \
 		.p_ss = AVR_IOPIN(_ss_pin_port, _p_ss), \
 	\
 		.spr = { AVR_IO_REGBIT(SPCR, SPR0), AVR_IO_REGBIT(SPCR, SPR1), AVR_IO_REGBIT(SPSR, SPI2X) }, \
