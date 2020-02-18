@@ -40,7 +40,7 @@
 #include "sim_time.h"
 #include "sim_gdb.h"
 
-#define LOOPBACK
+//#define LOOPBACK
 
 //#define TRACE(_w) _w
 #ifndef TRACE
