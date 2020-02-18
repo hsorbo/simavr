@@ -40,7 +40,7 @@
 #include "sim_time.h"
 #include "sim_gdb.h"
 
-//#define LOOPBACK
+#define LOOPBACK
 
 //#define TRACE(_w) _w
 #ifndef TRACE
@@ -139,7 +139,7 @@ avr_uart_tx_transfer_finished(
 
  avr_bitbang_stop (&(p->bit_bang_tx));
  
- avr_raise_irq (avr_io_getirq (p->bit_bang_tx.avr, AVR_IOCTL_IOPORT_GETIRQ (p->p_tx.port), p->p_tx.pin), 1);
+ //avr_raise_irq (avr_io_getirq (p->bit_bang_tx.avr, AVR_IOCTL_IOPORT_GETIRQ (p->p_tx.port), p->p_tx.pin), 1);
  
  return 0;
 }
@@ -201,8 +201,9 @@ avr_uart_rx_transfer_finished(
 
  avr_bitbang_stop (&(p->bit_bang_rx));
  
- //printf("==> UART received 0x%02X\n",data>>2);
- 
+#ifdef LOOPBACK
+  printf("==> UART received 0x%02X\n",data>>2);
+#endif 
  avr_uart_irq_input(NULL, data>>2, p);
      
  avr_ioctl(p->bit_bang_rx.avr, AVR_IOCTL_IOPORT_GETSTATE( p->bit_bang_rx.p_in.port ), &iostate);
@@ -398,9 +399,9 @@ avr_uart_udr_write(
         avr_bitbang_reset (p->bit_bang_tx.avr, &(p->bit_bang_tx));
         p->bit_bang_tx.data = (v & 0xFF)<<1 | 0x200;
         avr_bitbang_start (&(p->bit_bang_tx));
-        
-        //printf("==> UART send 0x%02X\n",v);
-        
+#ifdef LOOPBACK
+        printf("==> UART send 0x%02X\n",v);
+#endif        
 		p->tx_cnt++;
 		if (p->tx_cnt > 2) // AVR actually has 1-character UART tx buffer, plus shift register
 			AVR_LOG(avr, LOG_TRACE,
