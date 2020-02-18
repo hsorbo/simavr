@@ -26,6 +26,7 @@
 
 #include "sim_avr.h"
 #include "avr_twi.h"
+#include "avr_uart.h"
 #include "sim_elf.h"
 #include "sim_gdb.h"
 #include "sim_vcd_file.h"
@@ -81,10 +82,12 @@ int main(int argc, char *argv[])
 	avr_vcd_add_signal(&vcd_file, avr_io_getirq(avr, AVR_IOCTL_TWI_GETIRQ(0), TWI_IRQ_STATUS), 8 /* bits */ ,"TWSR" );
     avr_vcd_add_signal(&vcd_file, avr_io_getirq(avr, AVR_IOCTL_IOPORT_GETIRQ('C'), 5), 1 /* bits */, "SCL");
     avr_vcd_add_signal(&vcd_file, avr_io_getirq(avr, AVR_IOCTL_IOPORT_GETIRQ('C'), 4), 1 /* bits */, "SDA");
+    avr_vcd_add_signal(&vcd_file, avr_io_getirq(avr, AVR_IOCTL_IOPORT_GETIRQ('D'), 1), 1 /* bits */, "TX");
     avr_vcd_add_signal(&vcd_file, avr_io_getirq(avr, AVR_IOCTL_IOPORT_GETIRQ('C'), IOPORT_IRQ_PIN_ALL), 8 /* bits */, "PIN_ALL");
     avr_vcd_add_signal(&vcd_file, avr_io_getirq(avr, AVR_IOCTL_IOPORT_GETIRQ('C'), IOPORT_IRQ_REG_PORT ), 8 /* bits */, "REG_PORT");
     avr_vcd_add_signal(&vcd_file, avr_io_getirq(avr, AVR_IOCTL_IOPORT_GETIRQ('C'), IOPORT_IRQ_REG_PIN ), 8 /* bits */, "REG_PIN");
     avr_vcd_add_signal(&vcd_file, avr_io_getirq(avr, AVR_IOCTL_IOPORT_GETIRQ ('C'), IOPORT_IRQ_DIRECTION_ALL),8,"DDRC");
+	avr_vcd_add_signal(&vcd_file, avr_io_getirq(avr, AVR_IOCTL_UART_GETIRQ('0'), UART_IRQ_OUTPUT), 8 /* bits */ ,"UART_OUT" );
     avr_vcd_start(&vcd_file);
 	
 	printf( "\nDemo launching:\n");

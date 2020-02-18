@@ -73,13 +73,9 @@
 
 #define AVR_TWI_DEBUG 1
 
-/*
-//FIXME
-#undef AVR_TRACE
-#define AVR_TRACE(avr, ... ) \
-    printf( __VA_ARGS__)
-*/
 
+//#undef AVR_TRACE
+//#define AVR_TRACE(avr, ... ) printf( __VA_ARGS__)
 
 static inline void
 _avr_twi_status_set(
@@ -600,7 +596,7 @@ avr_twi_write(
    
    if(p->state & TWI_COND_STOP)
     { //hack to wait previous stop condition finish
-      avr_cycle_timer_register (avr, p->bit_bang.clk_cycles * 20, avr_start_clk_timer, p);
+      avr_cycle_timer_register (avr, p->bit_bang.clk_cycles * 2, avr_start_clk_timer, p);
     }
    else
     {
@@ -804,7 +800,25 @@ avr_twi_write_status(
 
  if (c != avr_regbit_get (avr, p->twps))
   {
-   // prescaler bits changed...
+    int PrescalerValue;
+    c = avr_regbit_get (avr, p->twps);
+    switch(c)
+    {
+      case 0:  
+       PrescalerValue=1;
+       break;
+      case 1:  
+       PrescalerValue=4;
+       break;
+      case 2:  
+       PrescalerValue=16;
+       break;
+      default:  
+       PrescalerValue=64;
+       break;      
+    }
+    p->bit_bang.clk_cycles = 16 + 2*(p->r_twbr)*PrescalerValue;
+    p->bit_bang_ack.clk_cycles=p->bit_bang.clk_cycles;
   }
 }
 
@@ -933,13 +947,13 @@ avr_twi_init(avr_t * avr, avr_twi_t * p)
  p->bit_bang.callback_transfer_finished = avr_twi_transfer_finished;
  p->bit_bang.callback_param = p;
  p->bit_bang.buffer_size = 8;
- p->bit_bang.clk_cycles = 8000;
+ p->bit_bang.clk_cycles = 16;
 
  p->bit_bang_ack.avr = avr;
  p->bit_bang_ack.callback_transfer_finished = avr_twi_ack_finished;
  p->bit_bang_ack.callback_param = p;
  p->bit_bang_ack.buffer_size = 1;
- p->bit_bang_ack.clk_cycles = 8000;
+ p->bit_bang_ack.clk_cycles = 16;
 
  p->bit_bang_ack.p_clk = p->bit_bang.p_clk;
  p->bit_bang_ack.p_in = p->bit_bang.p_in;

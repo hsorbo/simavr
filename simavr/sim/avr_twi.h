@@ -2,7 +2,8 @@
 	avr_twi.h
 
 	Copyright 2008, 2009 Michel Pollet <buserror@gmail.com>
-
+        Copyright 2020  Luis Claudio Gambôa Lopes <lcgamboa@yahoo.com>
+  
  	This file is part of simavr.
 
 	simavr is free software: you can redistribute it and/or modify

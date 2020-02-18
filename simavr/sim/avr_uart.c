@@ -40,6 +40,8 @@
 #include "sim_time.h"
 #include "sim_gdb.h"
 
+//#define LOOPBACK
+
 //#define TRACE(_w) _w
 #ifndef TRACE
 #define TRACE(_w)
@@ -128,6 +130,89 @@ avr_uart_rxc_raise(
 	return 0;
 }
 
+static uint32_t
+avr_uart_tx_transfer_finished(
+          uint32_t data, 
+          void *param)
+{
+ avr_uart_t * p = (avr_uart_t *) param;
+
+ avr_bitbang_stop (&(p->bit_bang_tx));
+ 
+ avr_raise_irq (avr_io_getirq (p->bit_bang_tx.avr, AVR_IOCTL_IOPORT_GETIRQ (p->p_tx.port), p->p_tx.pin), 1);
+ 
+ return 0;
+}
+
+#ifdef LOOPBACK
+static void
+avr_uart_loop_test( 
+          struct avr_irq_t* irq, 
+          uint32_t value, 
+          void* param )
+{
+  avr_uart_t * p = (avr_uart_t *) param;
+  //loopback tx on rx
+  avr_raise_irq (avr_io_getirq (p->bit_bang_rx.avr, AVR_IOCTL_IOPORT_GETIRQ (p->p_rx.port), p->p_rx.pin), value);
+}
+#endif
+
+static void
+avr_uart_rx_transfer_start( 
+        struct avr_irq_t* irq, 
+        uint32_t value, 
+        void* param )
+{
+  avr_uart_t * p = (avr_uart_t *) param;
+ 
+ if((p->prx == 1)&&(value ==0))
+ {
+   p->prx=2;
+   
+   p->bit_bang_rx.clk_cycles=p->cycles_per_byte/20;
+   avr_bitbang_stop (&(p->bit_bang_rx));
+   avr_bitbang_reset (p->bit_bang_rx.avr, &(p->bit_bang_rx));
+   avr_bitbang_start (&(p->bit_bang_rx));
+  
+ }
+ 
+ if((value == 1)&&(p->prx == 0))
+ {
+  p->prx = 1;
+ }
+
+}
+
+
+static void
+avr_uart_irq_input(
+		struct avr_irq_t * irq,
+		uint32_t value,
+		void * param);
+
+static uint32_t
+avr_uart_rx_transfer_finished(
+       uint32_t data, 
+       void *param)
+{
+ avr_uart_t * p = (avr_uart_t *) param;
+ avr_ioport_state_t iostate;
+ uint8_t bit = 0;
+
+ avr_bitbang_stop (&(p->bit_bang_rx));
+ 
+ //printf("==> UART received 0x%02X\n",data>>2);
+ 
+ avr_uart_irq_input(NULL, data>>2, p);
+     
+ avr_ioctl(p->bit_bang_rx.avr, AVR_IOCTL_IOPORT_GETSTATE( p->bit_bang_rx.p_in.port ), &iostate);
+ bit = ( iostate.pin >> p->bit_bang_rx.p_in.pin ) & 1;
+        
+ p->prx=bit;
+ 
+ return 0;
+}
+
 static uint8_t
 avr_uart_status_read(
 		struct avr_t * avr,
@@ -179,6 +264,8 @@ avr_uart_status_read(
 
 	return v;
 }
+
+
 
 static uint8_t
 avr_uart_read(
@@ -295,6 +382,25 @@ avr_uart_udr_write(
 	// tell other modules we are "outputting" a byte
 	if (avr_regbit_get(avr, p->txen)) {
 		avr_raise_irq(p->io.irq + UART_IRQ_OUTPUT, v);
+        
+        //update pin direction
+        //avr_set_r (avr, p->r_ddrx, avr_core_watch_read (avr, p->r_ddrx) | 1 << p->p_tx.pin );
+ 
+        //pull-up
+        //avr_set_r (avr, p->r_ddrx+1, avr_core_watch_read (avr, p->r_ddrx+1) & ~(1 << p->p_scl.pin | 1 << p->p_sda.pin));
+   
+        if (p->p_tx.port)
+        {
+          avr_raise_irq (avr_io_getirq (avr, AVR_IOCTL_IOPORT_GETIRQ (p->p_tx.port), p->p_tx.pin), 0);
+        }
+        p->bit_bang_tx.clk_cycles=p->cycles_per_byte/20;
+        avr_bitbang_stop (&(p->bit_bang_tx));
+        avr_bitbang_reset (p->bit_bang_tx.avr, &(p->bit_bang_tx));
+        p->bit_bang_tx.data = (v & 0xFF)<<1 | 0x200;
+        avr_bitbang_start (&(p->bit_bang_tx));
+        
+        //printf("==> UART send 0x%02X\n",v);
+        
 		p->tx_cnt++;
 		if (p->tx_cnt > 2) // AVR actually has 1-character UART tx buffer, plus shift register
 			AVR_LOG(avr, LOG_TRACE,
@@ -520,7 +626,32 @@ avr_uart_init(
 		avr_uart_t * p)
 {
 	p->io = _io;
-
+    
+    p->bit_bang_tx.avr = avr;
+    p->bit_bang_tx.callback_transfer_finished = avr_uart_tx_transfer_finished;
+    p->bit_bang_tx.callback_param = p;
+    p->bit_bang_tx.buffer_size = 10;
+    p->bit_bang_tx.clk_cycles = 100;
+    p->bit_bang_tx.clk_generate = 1;
+    p->bit_bang_tx.clk_phase = 1;
+    p->bit_bang_tx.clk_pol = 0;
+    p->bit_bang_tx.data_order=1;
+    
+    p->bit_bang_rx.avr = avr;
+    p->bit_bang_rx.callback_transfer_finished = avr_uart_rx_transfer_finished;
+    p->bit_bang_rx.callback_param = p;
+    p->bit_bang_rx.buffer_size = 9;
+    p->bit_bang_rx.clk_cycles = 100;
+    p->bit_bang_rx.clk_generate = 1;
+    p->bit_bang_rx.clk_phase = 0;
+    p->bit_bang_rx.clk_pol = 1;
+    p->bit_bang_rx.data_order=1;
+    
+    avr_irq_register_notify (avr_io_getirq (avr, AVR_IOCTL_IOPORT_GETIRQ (p->p_rx.port), p->p_rx.pin), avr_uart_rx_transfer_start, p);
+#ifdef LOOPBACK
+    avr_irq_register_notify (avr_io_getirq (avr, AVR_IOCTL_IOPORT_GETIRQ (p->p_tx.port), p->p_tx.pin), avr_uart_loop_test, p);
+#endif
+ 
 //	printf("%s UART%c UDR=%02x\n", __FUNCTION__, p->name, p->r_udr);
 
 	p->flags = AVR_UART_FLAG_POLL_SLEEP|AVR_UART_FLAG_STDIO;

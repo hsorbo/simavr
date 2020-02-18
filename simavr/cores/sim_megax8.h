@@ -120,7 +120,7 @@ const struct mcu_t SIM_CORENAME = {
 	},
 
 	//PRR/PRUSART0, upe=UPE, reg/bit name index=0, no 'C' in RX/TX vector names
-	AVR_UART_DECLARE(PRR, PRUSART0, UPE, 0, ),
+	AVR_UART_DECLARE(PRR, PRUSART0, UPE, 0, , 'D', 1 , 0),
 
 	.acomp = {
 		.mux_inputs = 8,

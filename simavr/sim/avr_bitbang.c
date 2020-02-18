@@ -67,6 +67,16 @@ static void avr_bitbang_read_bit(avr_bitbang_t *p)
 		}
 
 	}
+    else//only shift data
+     {
+        if ( p->data_order ) {
+			// data order: shift right
+			p->data = (p->data >> 1);
+		} else {
+			// data order: shift left
+			p->data = (p->data << 1) ;
+		}
+     }
 
 	// module callback
 	if ( p->callback_bit_read ) {
