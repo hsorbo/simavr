@@ -51,8 +51,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "%s: AVR '%s' not known\n", argv[0], f.mmcu);
 		exit(1);
 	}
-	   
-    avr_init(avr);
+	avr_init(avr);
 	avr_load_firmware(avr, &f);
 
 	// initialize our 'peripheral', setting the mask to allow read and write

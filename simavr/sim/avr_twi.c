@@ -20,6 +20,9 @@
     along with simavr.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+//TODO remove DDRX and use iostate
+
 #include <stdio.h>
 #include "avr_twi.h"
 

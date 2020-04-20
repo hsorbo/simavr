@@ -45,8 +45,7 @@ static int uart_putchar(char c, FILE *stream) {
 static FILE mystdout = FDEV_SETUP_STREAM(uart_putchar, NULL,
                                          _FDEV_SETUP_WRITE);
 
-//static 
-void
+static void
 test_twi_with_atmel_driver(void)
 {
 	TWI_Master_Initialise();
@@ -91,7 +90,7 @@ test_twi_with_atmel_driver(void)
  * "I2C master library using hardware TWI interface"
  * Author:   Peter Fleury <pfleury@gmx.ch>  http://jump.to/fleury
  */
-void
+static void
 test_twi_with_pf_driver(void)
 {
 	/*
@@ -113,7 +112,8 @@ test_twi_with_pf_driver(void)
 	// set address
 	i2c_write(0xa8);
 	i2c_write(0x01);
-	// Don't stop 
+	// Don't stop
+
 	// Read back data
 	i2c_start (EEPROM_ADDR + I2C_READ);
 	for (uint8_t i = 0; i < 8; ++i) {
