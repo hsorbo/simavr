@@ -59,7 +59,7 @@ typedef struct avr_gdb_t {
 /**
  * Returns the index of the watchpoint if found, -1 otherwise.
  */
-static int
+int
 gdb_watch_find(
 		const avr_gdb_watchpoints_t * w,
 		uint32_t addr )
@@ -193,7 +193,7 @@ gdb_send_reply(
 	send(g->s, reply, dst - reply + 3, 0);
 }
 
-static void
+void
 gdb_send_quick_status(
 		avr_gdb_t * g,
 		uint8_t signal )
@@ -474,7 +474,7 @@ gdb_handle_command(
 	}
 }
 
-static int
+int
 gdb_network_handler(
 		avr_gdb_t * g,
 		uint32_t dosleep )
