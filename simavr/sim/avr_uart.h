@@ -2,8 +2,7 @@
 	avr_uart.h
 
 	Copyright 2008, 2009 Michel Pollet <buserror@gmail.com>
-        Copyright 2020  Luis Claudio Gambôa Lopes <lcgamboa@yahoo.com>
-  
+
  	This file is part of simavr.
 
 	simavr is free software: you can redistribute it and/or modify
@@ -30,8 +29,6 @@ extern "C" {
 #include "sim_avr.h"
 
 #include "fifo_declare.h"
-    
-#include "avr_bitbang.h" //only tx output implemented
 
 DECLARE_FIFO(uint16_t, uart_fifo, 64);
 
@@ -120,12 +117,6 @@ typedef struct avr_uart_t {
 	avr_int_vector_t rxc;
 	avr_int_vector_t txc;
 	avr_int_vector_t udrc;	
-        
-        unsigned char   prx; //previous rx status
-        avr_iopin_t	p_tx;		
-	avr_iopin_t	p_rx;		
-	avr_bitbang_t	bit_bang_tx;
-        avr_bitbang_t	bit_bang_rx;
 
 	uart_fifo_t	input;
 	uint8_t		tx_cnt;			// number of unsent characters in the output buffer
@@ -189,7 +180,7 @@ void avr_uart_init(avr_t * avr, avr_uart_t * port);
 	}
 
 // This macro is for older single-interface devices where variable names are bit divergent
-#define AVR_UART_DECLARE(_prr, _prusart, _upe_name, _rname_ix, _intr_c, _pin_port, _p_tx, _p_rx) \
+#define AVR_UART_DECLARE(_prr, _prusart, _upe_name, _rname_ix, _intr_c) \
 	.uart = { \
 		.name = '0', \
 		.disabled = AVR_IO_REGBIT(_prr, _prusart), \
@@ -211,10 +202,6 @@ void avr_uart_init(avr_t * avr, avr_uart_t * port);
 		.r_ucsra = UCSR ## _rname_ix ## A, \
 		.r_ucsrb = UCSR ## _rname_ix ## B, \
 		.r_ucsrc = UCSR ## _rname_ix ## C, \
-                .bit_bang_tx.p_out = AVR_IOPIN(_pin_port, _p_tx), \
-                .bit_bang_rx.p_in  = AVR_IOPIN(_pin_port, _p_rx), \
-		.p_tx = AVR_IOPIN(_pin_port, _p_tx), \
-		.p_rx = AVR_IOPIN(_pin_port, _p_rx), \
 	\
 		.rxc = { \
 			.enable = AVR_IO_REGBIT(UCSR ## _rname_ix ## B, RXCIE ## _rname_ix), \

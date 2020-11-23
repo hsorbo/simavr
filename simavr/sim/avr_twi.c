@@ -74,7 +74,7 @@
 #define TWI_NO_STATE               0xF8  // No relevant state information available; TWINT = �0�
 #define TWI_BUS_ERROR              0x00  // Bus error due to an illegal START or STOP condition
 
-#define AVR_TWI_DEBUG 1
+//#define AVR_TWI_DEBUG 1
 
 
 //#undef AVR_TRACE
