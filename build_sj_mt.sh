@@ -1,6 +1,6 @@
 source ~/emsdk/emsdk_env.sh
 export CC=emcc
-export CFLAGS="-I/home/gamboa/emsdk/emscripten/1.38.8/system/local/include/ -s USE_PTHREADS=1 -s PTHREAD_POOL_SIZE=2 -s WASM=1"
+export CFLAGS="-I/home/gamboa/emsdk/upstream/emscripten/system/local/include/ -s USE_PTHREADS=1"
 make clean
 make
 mv simavr/obj-wasm32-unknown-emscripten/ simavr/obj-wasm32-unknown-emscripten_mt
