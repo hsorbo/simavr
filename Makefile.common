@@ -26,6 +26,8 @@
 #	You should have received a copy of the GNU General Public License
 #	along with simavr.  If not, see <http://www.gnu.org/licenses/>.
 
+
+
 # simavr directory
 SIMAVR		:= ${shell for p in . .. ../.. ../../..;do test -d $$p/simavr/sim && echo $$p/simavr; done}
 
@@ -43,7 +45,7 @@ CFLAGS		+= -Wall -Wextra -Wno-unused-parameter \
 			-Wno-unused-result -Wno-missing-field-initializers \
 			-Wno-sign-compare
 #CFLAGS		+= -ggdb
-CFLAGS		+= -O2
+CFLAGS		+= -O2 -flto
 CORE_CFLAGS	= -DAVR_CORE=1
 
 ifeq (${shell uname}, Darwin)
@@ -115,7 +117,7 @@ OBJ 		:= obj-${shell $(CC) -dumpmachine}
 LIBDIR		:= ${shell pwd}/${SIMAVR}/${OBJ}
 LDFLAGS 	+= -L${LIBDIR} -lsimavr -lm
 
-LDFLAGS 	+= -lelf
+LDFLAGS 	+= -lelf -flto
 
 ifeq (${WIN}, Msys)
 LDFLAGS      += -lws2_32
@@ -210,7 +212,7 @@ ${OBJ}/%.so.1: ${OBJ}/%.a
 ifneq ($(E),)
 	@echo SHARED $@
 endif
-	${E}$(CC) -o $@ -shared \
+	${E}$(CC) -flto -o $@ -shared \
 		-Wl,--whole-archive,-soname,${basename ${notdir $@}}.1 \
 		${filter %.o %.a,$^} \
 		 -Wl,--no-whole-archive \

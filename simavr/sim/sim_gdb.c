@@ -320,6 +320,54 @@ gdb_handle_command(
 
 				gdb_send_reply(g, rep);
 				break;
+			} else if (strncmp(cmd, "RegisterInfo", 12) == 0) {
+				// Send back the information we have on this register (if any).
+				long n = strtol(cmd + 12, NULL, 16);
+				if (n < 32) {
+					// General purpose (8-bit) registers.
+					snprintf(rep, sizeof(rep), "name:r%ld;bitsize:8;offset:0;encoding:uint;format:hex;set:General Purpose Registers;gcc:%ld;dwarf:%ld;", n, n, n);
+					gdb_send_reply(g, rep);
+					break;
+				} else if (n == 32) {
+					// SREG (flags) register.
+					snprintf(rep, sizeof(rep), "name:sreg;bitsize:8;offset:0;encoding:uint;format:binary;set:General Purpose Registers;gcc:32;dwarf:32;");
+					gdb_send_reply(g, rep);
+					break;
+				} else if (n == 33) {
+					// SP register (SPH and SPL combined).
+					snprintf(rep, sizeof(rep), "name:sp;bitsize:16;offset:0;encoding:uint;format:hex;set:General Purpose Registers;gcc:33;dwarf:33;generic:sp;");
+					gdb_send_reply(g, rep);
+					break;
+				} else if (n == 34) {
+					// PC register
+					snprintf(rep, sizeof(rep), "name:pc;bitsize:32;offset:0;encoding:uint;format:hex;set:General Purpose Registers;gcc:34;dwarf:34;generic:pc;");
+					gdb_send_reply(g, rep);
+					break;
+				} else {
+					// Register not available.
+					// By sending back nothing, the debugger knows it has read
+					// all available registers.
+				}
+			} else if (strncmp(cmd, "Rcmd", 4) == 0) { // monitor command
+				char * args = strchr(cmd, ',');
+				if (args != NULL) {
+					args++;
+					while (args != 0x00) {
+						printf("%s",args);
+						if (strncmp(args, "7265736574", 10) == 0) { // reset matched
+							avr->state = cpu_StepDone;
+							avr_reset(avr);
+							args += 10;
+						} else if (strncmp(args, "68616c74", 8) == 0) { // halt matched
+							avr->state = cpu_Stopped;
+							args += 8;
+						} else if (strncmp(args, "20", 2) == 0) { // space matched
+							args += 2;
+						} else // no match - end
+							break;
+					}
+				}
+				gdb_send_reply(g, "OK");
 			}
 			gdb_send_reply(g, "");
 			break;
@@ -467,6 +515,11 @@ gdb_handle_command(
 					gdb_send_reply(g, "");
 					break;
 			}
+		}	break;
+		case 'K': 	// kill
+		case 'D': {	// detach
+			avr->state = cpu_Done;
+			gdb_send_reply(g, "OK");
 		}	break;
 		default:
 			gdb_send_reply(g, "");
