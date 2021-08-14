@@ -619,6 +619,9 @@ avr_timer_write_ocr(
 			break;
 		case avr_timer_wgm_pwm:
 			if (timer->mode.top != avr_timer_wgm_reg_ocra) {
+				if (oldv != _timer_get_comp_ocr(avr, comp)){ 
+					avr_timer_reconfigure(timer, 0); // if OCRA change, reconfigure needed
+				}
 				avr_raise_irq(timer->io.irq + TIMER_IRQ_OUT_PWM0, _timer_get_ocr(timer, AVR_TIMER_COMPA));
 			} else {
 				avr_timer_reconfigure(timer, 0); // if OCRA is the top, reconfigure needed
