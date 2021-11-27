@@ -44,7 +44,7 @@ ARCH 		:= ${shell $(CC) -dumpmachine | sed -e 's/^x/i/' -e 's/\(.\).*/\1/'}
 CFLAGS		+= -Wall -Wextra -Wno-unused-parameter \
 			-Wno-unused-result -Wno-missing-field-initializers \
 			-Wno-sign-compare
-#CFLAGS		+= -ggdb
+#CFLAGS		+= -ggdb -Og
 CFLAGS		+= -O2 -flto
 CORE_CFLAGS	= -DAVR_CORE=1
 
@@ -107,7 +107,7 @@ CPPFLAGS	+= ${patsubst %,-I%,${subst :, ,${IPATH}}}
 AVR_CPPFLAGS	= ${CPPFLAGS} -I${SIMAVR}/cores
 
 CC 			?= clang
-AR 			?= ar
+AR 			?= gcc-ar
 RANLIB 		?= ranlib
 MKDIR		?= mkdir -p
 INSTALL		?= install

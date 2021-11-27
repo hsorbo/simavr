@@ -63,7 +63,7 @@ avr_ioport_update_irqs(
 		*/	
 	}
 	uint8_t pin = (avr->data[p->r_pin] & ~ddr) | (avr->data[p->r_port] & ddr);
-	pin = (pin & ~p->external.pull_mask) | p->external.pull_value;
+	//pin = (pin & ~p->external.pull_mask) | p->external.pull_value;
 	avr_raise_irq(p->io.irq + IOPORT_IRQ_PIN_ALL, pin);
 
 	// if IRQs are registered on the PORT register (for example, VCD dumps) send
