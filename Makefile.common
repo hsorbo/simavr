@@ -106,8 +106,8 @@ CPPFLAGS	+= ${patsubst %,-I%,${subst :, ,${IPATH}}}
 
 AVR_CPPFLAGS	= ${CPPFLAGS} -I${SIMAVR}/cores
 
-CC 			?= clang
-AR 			?= gcc-ar
+CC 		?= clang
+AR 		= gcc-ar
 RANLIB 		?= ranlib
 MKDIR		?= mkdir -p
 INSTALL		?= install
