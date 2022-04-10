@@ -1,0 +1,11 @@
+name: Build simavr
+on: [push]
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: sudo apt-get install libelf-dev freeglut3-dev gcc-avr avr-libc
+      - name: Build
+        run: make
