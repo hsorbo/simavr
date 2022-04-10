@@ -16,6 +16,6 @@ jobs:
       - name: Install dependencies
         run: |
           brew tap osx-cross/homebrew-avr
-          brew install avr-gcc
+          brew install avr-gcc libelf
       - name: Build
         run: make
