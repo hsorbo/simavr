@@ -1,4 +1,4 @@
-name: Build picsim
+name: Build simavr
 on: [push]
 jobs:
   build-linux:
@@ -6,6 +6,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install dependencies
-        run: apt-get install gcc-avr avr-libc
+        run: sudo apt-get install gcc-avr avr-libc
       - name: Build
         run: make
