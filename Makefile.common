@@ -51,6 +51,8 @@ CORE_CFLAGS	= -DAVR_CORE=1
 ifeq (${shell uname}, Darwin)
  # gcc 4.2 from MacOS is really not up to scratch anymore
  CC			= clang
+ AR			= ar
+ RANLIB		= ranlib
  AVR_ROOT 	:= "/Applications/Arduino.app/Contents/Java/hardware/tools/avr/"
  AVR 		:= ${AVR_ROOT}/bin/avr-
  # Thats for MacPorts libelf
@@ -107,8 +109,8 @@ CPPFLAGS	+= ${patsubst %,-I%,${subst :, ,${IPATH}}}
 AVR_CPPFLAGS	= ${CPPFLAGS} -I${SIMAVR}/cores
 
 CC 		?= clang
-AR 		= gcc-ar
-RANLIB 		= gcc-ranlib
+AR 		?= gcc-ar
+RANLIB 		?= gcc-ranlib
 MKDIR		?= mkdir -p
 INSTALL		?= install
 SHELL	 	:= ${shell which bash}
