@@ -1,0 +1,11 @@
+name: Build picsim
+on: [push]
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: apt-get install gcc-avr avr-libc
+      - name: Build
+        run: make
